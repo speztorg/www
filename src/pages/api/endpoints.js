@@ -16,6 +16,14 @@ export async function CreateUser(userInfo) {
   return post("/api/users", userInfo);
 }
 
+export async function CreateFirebaseConnection(userIds) {
+  return post("/api/users", userIds);
+}
+
+export async function GetFireBaseId(uid) {
+  return get(`/api/users?firebaseid=${uid}`);
+}
+
 export async function CreateExperience(userId, experience) {
   return post(`/api/users/${userId}/experiences`, experience);
 }
@@ -47,6 +55,14 @@ export async function GetUser(userId) {
 
 export async function GetUserByUserName(userName) {
   return get(`/api/users?userName=${userName}`);
+}
+
+export async function GetUserByEmail(email) {
+  return get(`/api/users?email=${email}`);
+}
+
+export async function GetUserByPhoneNumber(phoneNumber) {
+  return get(`/api/users?phoneNumber=${phoneNumber}`);
 }
 
 export async function GetAllUsers() {

@@ -1,92 +1,60 @@
-import React, { ReactElement, useState } from "react";
-import { useFormik } from "formik";
-import { useRouter } from "next/router";
-import { loginFormSchema } from "helpers/formValidationSchemas";
-import useAuth from "hooks/useAuth";
+import React, { ReactElement, useEffect, useState } from "react";
+import firebase from "firebase/app";
 import useMaxWidth from "hooks/useMaxWidth";
-import { Button } from "components";
-import { MUIInput } from "components/Input";
-import Link from "components/LinkWrap";
+import PhoneNumberForm from "components/Login/PhoneNumberForm";
+import VerificationCodeForm from "components/Login/VerificationCodeForm";
 import styles from "./LoginFormContainer.module.scss";
 
 const LoginFormContainer = (): ReactElement => {
-  const { login } = useAuth();
-  const router = useRouter();
-  const [isLoginLoading, setLoginLoader] = useState(false);
+  const [isVerificationCodeSent, setVerificationCodeSent] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
 
-  const formik = useFormik({
-    initialValues: {
-      userName: "",
-      password: ""
-    },
-    validationSchema: loginFormSchema,
-    onSubmit: async (values) => {
-      const body = {
-        userName: values.userName,
-        password: values.password
-      };
-
-      try {
-        setLoginLoader(true);
-        await login(body);
-        router.push("/profill");
-      } catch (error) {
-        setErrorMessage(error.message);
-        // eslint-disable-next-line no-console
-        console.error(error);
-        setLoginLoader(false);
-      }
+  useEffect(() => {
+    try {
+      (window as any).recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        "recaptcha-container",
+        {
+          size: "invisible",
+          callback: (response) => {
+            console.log("recatpcha callback", response);
+            // reCAPTCHA solved, allow signInWithPhoneNumber.
+          }
+        }
+      );
+    } catch (error) {
+      console.log("eeee", error);
     }
-  });
+  }, []);
+
+  /// ////////
+  ///
+  /// Phone number has to have a country code with a +
+  /// +3546952489 is valid
+  //
 
   return (
     <div>
+      <div id="recaptcha-container" />
       <div {...useMaxWidth()}>
-        <form onSubmit={formik.handleSubmit} className={styles.form}>
-          <span className={styles.heading}>Innskráning</span>
-          <MUIInput
-            type="text"
-            id="userName"
-            name="userName"
-            placeholder="Notendanafn"
-            onChange={formik.handleChange}
-            onBlur={() => formik.setFieldTouched("userName", true, true)}
-            value={formik.values.userName}
-            error={formik.errors.userName}
-            isTouched={formik.touched.userName}
-          />
-          <MUIInput
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Lykilorð"
-            onChange={formik.handleChange}
-            onBlur={() => formik.setFieldTouched("password", true, true)}
-            value={formik.values.password}
-            error={formik.errors.password}
-            isTouched={formik.touched.password}
-          />
-          <p className={styles.error}>{errorMessage}</p>
-          <Button
-            className={styles.button}
-            type="submit"
-            isLoading={isLoginLoading}
-          >
-            Innskrá
-          </Button>
-          <span className={styles.or}>
-            <span>eða</span>
+        {/* {signInAllowed ? ( */}
+        <>
+          {!isVerificationCodeSent ? (
+            <PhoneNumberForm
+              setVerificationCodeSent={setVerificationCodeSent}
+              setErrorMessage={setErrorMessage}
+            />
+          ) : (
+            <VerificationCodeForm setErrorMessage={setErrorMessage} />
+          )}
+        </>
+        {/* ) : (
+          <span className={styles.error}>
+            Eitthvað mistókst að auðkenna þig, vinsamlegast reyndu aftur síðar
           </span>
-
-          <Link href="/nyskra" as="/nyskra">
-            <Button className={styles.button} modifier={["inverted"]}>
-              Stofna nýjan aðgang
-            </Button>
-          </Link>
-        </form>
+        )} */}
       </div>
+      <span className={styles.error}>{errorMessage}</span>
     </div>
   );
 };
